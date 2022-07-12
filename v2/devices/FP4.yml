@@ -41,7 +41,7 @@ handlers:
           code_url: "https://www.fairphone.com/en/bootloader-unlocking-code-for-fairphone-3"
 operating_systems:
   - name: "Ubuntu Touch"
-    compatible_installer: ">=0.9.2-beta"
+    compatible_installer: ">=0.9.6-beta"
     options:
       - var: "channel"
         name: "Channel"
@@ -95,17 +95,7 @@ operating_systems:
           var: "partition"
           value: true
       - actions:
-          - fastboot:reboot:
-              to_state: "recovery"
-        fallback:
-          - core:user_action:
-              action: "recovery"
-        condition:
-          var: "partition"
-          value: true
-      - actions:
-          - adb:reboot:
-              to_state: "fastbootd"
+          - fastboot:reboot_fastboot:
         fallback:
           - core:user_action:
               action: "fastbootd"
@@ -114,16 +104,15 @@ operating_systems:
           value: true
       - actions:
           - fastboot:delete_logical_partition:
-              partition: "system_ext"
+              partition: "system_ext" # FIXME Maybe if it's not a clean flash, then we also need to delete _b? We also want to delete product_[ab] I believe
           - fastboot:resize_logical_partition:
-              partition: "system_a"
+              partition: "system_a" # FIXME this has _a suffix, the upper one doens't.
               size: 3221225472
         condition:
           var: "partition"
           value: true
       - actions:
-          - adb:reboot:
-              to_state: "bootloader"
+          - fastboot:reboot_bootloader:
         fallback:
           - core:user_action:
               action: "bootloader_from_fastbootd"
@@ -131,19 +120,10 @@ operating_systems:
           var: "partition"
           value: true
       - actions:
-          - adb:reboot:
-              to_state: "bootloader"
-        fallback:
-          - core:user_action:
-              action: "bootloader"
-        condition:
-          var: "bootstrap"
-          value: true
-      - actions:
           - fastboot:set_active:
               slot: "a"
         condition:
-          var: "bootstrap"
+          var: "partition" # FIXME not "bootstrap" ?
           value: true
       - actions:
           - fastboot:flash:
@@ -177,6 +157,8 @@ operating_systems:
           var: "wipe"
           value: true
       - actions:
+          - fastboot:reboot_recovery:
+        fallback:
           - core:user_action:
               action: "recovery"
         condition:
